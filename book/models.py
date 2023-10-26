@@ -20,5 +20,8 @@ class Book(models.Model):
         decimal_places=2,
     )
 
+    class Meta:
+        ordering = ["title"]
+
     def __str__(self):
         return self.title
