@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from book.serializers import BookDetailSerializer
 from borrowing.models import Borrowing
@@ -19,6 +20,17 @@ class BorrowingSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         data["user"] = user
         return data
+
+    def validate_book(self, value):
+        if value.inventory == 0:
+            raise ValidationError(
+                "Unfortunately, this book is unavailable "
+                "for borrowing right now."
+            )
+        value.inventory -= 1
+        value.save()
+
+        return value
 
 
 class BorrowingListSerializer(BorrowingSerializer):
