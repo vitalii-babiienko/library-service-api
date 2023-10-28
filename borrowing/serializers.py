@@ -80,3 +80,20 @@ class BorrowingDetailSerializer(BorrowingSerializer):
             "user",
             "is_active",
         )
+
+
+class BorrowingReturnSerializer(BorrowingSerializer):
+    class Meta:
+        model = Borrowing
+        fields = (
+            "id",
+            "borrow_date",
+            "expected_return_date",
+            "book",
+        )
+        read_only_fields = (
+            "id",
+            "borrow_date",
+            "expected_return_date",
+            "book",
+        )
