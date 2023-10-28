@@ -1,12 +1,17 @@
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from borrowing.models import Borrowing
 from borrowing.serializers import (
     BorrowingSerializer,
     BorrowingListSerializer,
     BorrowingDetailSerializer,
+    BorrowingReturnSerializer,
 )
 
 
@@ -47,7 +52,43 @@ class BorrowingViewSet(viewsets.ModelViewSet):
         if self.action == "retrieve":
             return BorrowingDetailSerializer
 
+        if self.action == "return_borrowing":
+            return BorrowingReturnSerializer
+
         return BorrowingSerializer
+
+    @action(
+        methods=["PATCH"],
+        detail=True,
+        url_path="return",
+        permission_classes=[IsAuthenticated],
+    )
+    def return_borrowing(self, request, pk=None):
+        """Endpoint for returning the book to the library"""
+        borrowing = get_object_or_404(
+            Borrowing,
+            user=request.user,
+            pk=pk,
+        )
+
+        if borrowing.is_active:
+            borrowing.actual_return_date = timezone.now().date()
+            borrowing.is_active = False
+            borrowing.save()
+
+            book = borrowing.book
+            book.inventory += 1
+            book.save()
+
+            return Response(
+                {"success": "You have successfully returned the book."},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"error": "You have already returned the book!"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     @extend_schema(
         parameters=[
