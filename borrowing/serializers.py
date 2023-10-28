@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -30,6 +31,14 @@ class BorrowingSerializer(serializers.ModelSerializer):
         value.inventory -= 1
         value.save()
 
+        return value
+
+    def validate_expected_return_date(self, value):
+        if value <= timezone.now().date():
+            raise ValidationError(
+                "The expected return date cannot be earlier "
+                "than tomorrow day."
+            )
         return value
 
 
