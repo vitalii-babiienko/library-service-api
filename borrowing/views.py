@@ -10,6 +10,7 @@ from borrowing.serializers import (
 )
 
 
+@extend_schema(tags=["Borrowings"])
 class BorrowingViewSet(viewsets.ModelViewSet):
     queryset = Borrowing.objects.all()
     serializer_class = BorrowingSerializer
