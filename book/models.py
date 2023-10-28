@@ -1,5 +1,16 @@
+import os
+import uuid
+
 from django.db import models
+from django.utils.text import slugify
 from django.utils.translation import gettext as _
+
+
+def create_custom_image_file_path(instance, filename):
+    _, extension = os.path.splitext(filename)
+    filename = f"{slugify(instance.title)}-{uuid.uuid4()}{extension}"
+
+    return os.path.join("uploads", "books", filename)
 
 
 class Book(models.Model):
@@ -18,6 +29,11 @@ class Book(models.Model):
     daily_fee = models.DecimalField(
         max_digits=6,
         decimal_places=2,
+    )
+    image = models.ImageField(
+        null=True,
+        blank=True,
+        upload_to=create_custom_image_file_path,
     )
 
     class Meta:
