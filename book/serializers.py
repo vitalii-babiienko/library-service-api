@@ -25,6 +25,7 @@ class BookListSerializer(serializers.ModelSerializer):
             "author",
             "inventory",
             "daily_fee",
+            "image",
         )
 
 
@@ -38,4 +39,11 @@ class BookDetailSerializer(serializers.ModelSerializer):
             "cover",
             "inventory",
             "daily_fee",
+            "image",
         )
+
+
+class BookImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ("id", "image")
