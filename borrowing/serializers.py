@@ -1,9 +1,11 @@
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from book.serializers import BookDetailSerializer
 from borrowing.models import Borrowing
+from notification.services import send_notification
 from user.serializers import UserSerializer
 
 
@@ -17,20 +19,12 @@ class BorrowingSerializer(serializers.ModelSerializer):
             "book",
         )
 
-    def validate(self, data):
-        user = self.context["request"].user
-        data["user"] = user
-        return data
-
     def validate_book(self, value):
         if value.inventory == 0:
             raise ValidationError(
                 "Unfortunately, this book is unavailable "
                 "for borrowing right now."
             )
-        value.inventory -= 1
-        value.save()
-
         return value
 
     def validate_expected_return_date(self, value):
@@ -40,6 +34,30 @@ class BorrowingSerializer(serializers.ModelSerializer):
                 "than tomorrow day."
             )
         return value
+
+    @transaction.atomic
+    def create(self, validated_data):
+        request = self.context.get("request")
+        user = request.user
+        book = validated_data.get("book")
+
+        if user.borrowings.filter(
+            book=book,
+            is_active=True,
+        ).exists():
+            raise ValidationError(
+                "Sorry, but you have already borrowed this book!"
+            )
+
+        book.inventory -= 1
+        book.save()
+
+        borrowing = Borrowing.objects.create(
+            user=user,
+            **validated_data,
+        )
+        send_notification(f"{user} borrowed the book '{book.title}'.")
+        return borrowing
 
 
 class BorrowingListSerializer(BorrowingSerializer):
