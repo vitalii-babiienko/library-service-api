@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.utils import timezone
+from django_q.tasks import async_task
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -56,7 +57,8 @@ class BorrowingSerializer(serializers.ModelSerializer):
             user=user,
             **validated_data,
         )
-        send_notification(f"{user} borrowed the book '{book.title}'.")
+        message = f"{user} borrowed the book '{book.title}'."
+        async_task(send_notification, message)
         return borrowing
 
 
