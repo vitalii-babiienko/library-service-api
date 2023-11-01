@@ -1,6 +1,7 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
@@ -14,11 +15,18 @@ from book.serializers import (
 )
 
 
+class BookPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 @extend_schema(tags=["Books"])
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
     serializer_class = BookSerializer
     permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = BookPagination
 
     def get_serializer_class(self):
         if self.action == "list":
